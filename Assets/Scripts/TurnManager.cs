@@ -1,11 +1,11 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TurnManager : MonoBehaviour
 {
     [SerializeField] float turnTime = 5f;
-    [SerializeField] TMP_Text timer;
+    [SerializeField] Image timerBar;
     [SerializeField] Color whitePlayerColor = Color.red;
     [SerializeField] Color blackPlayerColor = Color.blue;
 
@@ -46,11 +46,13 @@ public class TurnManager : MonoBehaviour
     {
         if (playerIndex == 1)
         {
-            timer.color = blackPlayerColor;
+            timerBar.color = blackPlayerColor;
+            timerBar.fillOrigin = (int)Image.OriginHorizontal.Right;
         }
         else
         {
-            timer.color = whitePlayerColor;
+            timerBar.color = whitePlayerColor;
+            timerBar.fillOrigin = (int)Image.OriginHorizontal.Left;
         }
     }
 
@@ -62,10 +64,10 @@ public class TurnManager : MonoBehaviour
             while (timeLeft > 0)
             {
                 timeLeft -= Time.deltaTime;
-                timer.text = timeLeft.ToString("F2");
+                timerBar.fillAmount = timeLeft / turnTime;
                 yield return null;
             }
-            timer.text = "0.00";
+            timerBar.fillAmount = 0;
         }
     }
 
@@ -74,4 +76,3 @@ public class TurnManager : MonoBehaviour
         get { return playerIndex; }
     }
 }
-
