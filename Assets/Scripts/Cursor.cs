@@ -2,14 +2,18 @@ using UnityEngine;
 
 public class Cursor : MonoBehaviour
 {
-    [SerializeField] GameObject[] boardSquare;
-    [SerializeField] GameObject centerBoardSquare;
+    //Parte visual si monobehaviuor, parte de lógica no
+
+    [SerializeField] Vector2Int[] boardPositions;
+    [SerializeField] Vector2 centerPosition;
+
+    [SerializeField] int boardWidth = 0;
+    [SerializeField] int boardHeight = 0;
 
     [SerializeField] Material blackPlayer;
     [SerializeField] Material whitePlayer;
 
     MeshRenderer[] cursorWalls;
-    private Vector3 offset = new Vector3(-0.5f, 0, 0);
     private int currentSquareIndex;
 
     TurnManager turnManager;
@@ -24,8 +28,8 @@ public class Cursor : MonoBehaviour
 
         turnManager = FindObjectOfType<TurnManager>();
 
-        currentSquareIndex = System.Array.IndexOf(boardSquare, centerBoardSquare);
-        transform.position = boardSquare[currentSquareIndex].transform.position + offset;
+        currentSquareIndex = System.Array.IndexOf(boardPositions, centerPosition);
+        //transform.position = boardPositions[currentSquareIndex];
     }
 
     void Update()
@@ -38,15 +42,6 @@ public class Cursor : MonoBehaviour
     {
         Material selectedMaterial = (turnManager.RandomPlayer == 0) ? blackPlayer : whitePlayer;
 
-        if (turnManager.RandomPlayer == 0)
-        {
-            selectedMaterial = blackPlayer;
-        }
-        else
-        {
-            selectedMaterial = whitePlayer;
-        }
-
         for (int i = 0; i < cursorWalls.Length; i++)
         {
             cursorWalls[i].material = selectedMaterial;
@@ -55,17 +50,17 @@ public class Cursor : MonoBehaviour
 
     void Movement()
     {
-        int boardWidth = Mathf.RoundToInt(Mathf.Sqrt(boardSquare.Length));
+        int boardWidth = Mathf.RoundToInt(Mathf.Sqrt(boardPositions.Length));
 
         if (turnManager.RandomPlayer == 0)
         {
             if (Input.GetKeyDown(KeyCode.W))
             {
-                currentSquareIndex = (currentSquareIndex - boardWidth + boardSquare.Length) % boardSquare.Length;
+                currentSquareIndex = (currentSquareIndex - boardWidth + boardPositions.Length) % boardPositions.Length;
             }
             else if (Input.GetKeyDown(KeyCode.S))
             {
-                currentSquareIndex = (currentSquareIndex + boardWidth) % boardSquare.Length;
+                currentSquareIndex = (currentSquareIndex + boardWidth) % boardPositions.Length;
             }
             else if (Input.GetKeyDown(KeyCode.A))
             {
@@ -100,11 +95,11 @@ public class Cursor : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.UpArrow))
             {
-                currentSquareIndex = (currentSquareIndex - boardWidth + boardSquare.Length) % boardSquare.Length;
+                currentSquareIndex = (currentSquareIndex - boardWidth + boardPositions.Length) % boardPositions.Length;
             }
             else if (Input.GetKeyDown(KeyCode.DownArrow))
             {
-                currentSquareIndex = (currentSquareIndex + boardWidth) % boardSquare.Length;
+                currentSquareIndex = (currentSquareIndex + boardWidth) % boardPositions.Length;
             }
             else if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
@@ -136,6 +131,6 @@ public class Cursor : MonoBehaviour
             }
         }
 
-        transform.position = boardSquare[currentSquareIndex].transform.position + offset;
+        //transform.position = boardPositions[currentSquareIndex];
     }
 }
