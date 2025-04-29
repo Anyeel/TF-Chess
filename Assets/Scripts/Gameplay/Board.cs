@@ -1,8 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class Board
 {
@@ -16,15 +13,27 @@ public class Board
         {
             for (int j = 0; j < height; j++)
             {
-                if ((i + j) % 2 == 0)
-                {
-                    squares[i, j] = new Square(new Vector2Int(i, j), whiteSquarePrefab);
-                }
-                else
-                {
-                    squares[i, j] = new Square(new Vector2Int(i, j), blackSquarePrefab);
-                }
+                // Calcular el índice en formato Vector2Int (base 1)
+                Vector2Int index = new Vector2Int(i + 1, j + 1);
+
+                // Seleccionar el prefab correcto
+                GameObject prefab = (i + j) % 2 == 0 ? whiteSquarePrefab : blackSquarePrefab;
+
+                // Crear el cuadrado con su índice
+                squares[i, j] = new Square(new Vector2Int(i, j), prefab, index);
             }
+        }
+    }
+
+    public Square GetSquareAtPosition(int x, int y)
+    {
+        if (x >= 0 && x < squares.GetLength(0) && y >= 0 && y < squares.GetLength(1))
+        {
+            return squares[x, y];
+        }
+        else
+        {
+            return null;
         }
     }
 }
