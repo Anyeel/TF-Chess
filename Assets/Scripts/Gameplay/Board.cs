@@ -1,39 +1,52 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Board
 {
-    Square[,] squares;
+    private Square[,] squares;
+
+    public int Width { get; private set; }
+    public int Height { get; private set; }
 
     public Board(int width, int height, GameObject whiteSquarePrefab, GameObject blackSquarePrefab)
     {
+        if (width <= 0 || height <= 0)
+        {
+            throw new System.ArgumentException("El ancho y alto del tablero deben ser mayores que 0.");
+        }
+
+        Width = width;
+        Height = height;
+
         squares = new Square[width, height];
 
-        for (int i = 0; i < width; i++)
+        InitializeSquares(whiteSquarePrefab, blackSquarePrefab);
+    }
+
+    private void InitializeSquares(GameObject whiteSquarePrefab, GameObject blackSquarePrefab)
+    {
+        for (int i = 0; i < Width; i++)
         {
-            for (int j = 0; j < height; j++)
+            for (int j = 0; j < Height; j++)
             {
-                // Calcular el índice en formato Vector2Int (base 1)
-                Vector2Int index = new Vector2Int(i + 1, j + 1);
-
-                // Seleccionar el prefab correcto
-                GameObject prefab = (i + j) % 2 == 0 ? whiteSquarePrefab : blackSquarePrefab;
-
-                // Crear el cuadrado con su índice
-                squares[i, j] = new Square(new Vector2Int(i, j), prefab, index);
+                squares[i, j] = CreateSquare(i, j, whiteSquarePrefab, blackSquarePrefab);
             }
         }
     }
 
+    private Square CreateSquare(int x, int y, GameObject whiteSquarePrefab, GameObject blackSquarePrefab)
+    {
+        Vector2Int index = new Vector2Int(x + 1, y + 1);
+        GameObject prefab = (x + y) % 2 == 0 ? whiteSquarePrefab : blackSquarePrefab;
+        return new Square(new Vector2Int(x, y), prefab, index);
+    }
+
     public Square GetSquareAtPosition(int x, int y)
     {
-        if (x >= 0 && x < squares.GetLength(0) && y >= 0 && y < squares.GetLength(1))
-        {
-            return squares[x, y];
-        }
-        else
-        {
-            return null;
-        }
+        return IsValidPosition(x, y) ? squares[x, y] : null;
+    }
+
+    private bool IsValidPosition(int x, int y)
+    {
+        return x >= 0 && x < Width && y >= 0 && y < Height;
     }
 }

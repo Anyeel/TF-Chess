@@ -448,6 +448,8 @@ MonoBehaviour:
   timerBar: {fileID: 799641618}
   whitePlayerColor: {r: 1, g: 0, b: 0, a: 1}
   blackPlayerColor: {r: 0, g: 0, b: 1, a: 1}
+  whitePiecePrefab: {fileID: 6766838018543776728, guid: 360462f32889ace47bdc0ef8e6af5e35, type: 3}
+  blackPiecePrefab: {fileID: 6073023978583093832, guid: 2620482c169929e478ce0f1217ddfc3a, type: 3}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
