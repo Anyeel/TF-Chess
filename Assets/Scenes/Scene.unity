@@ -226,6 +226,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &309345488
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 309345489}
+  m_Layer: 0
+  m_Name: Board
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &309345489
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 309345488}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -444,12 +475,15 @@ MonoBehaviour:
   whiteSquarePrefab: {fileID: 4725395838164724671, guid: 6640fc29d6d21e54da99d320e04efe0f, type: 3}
   blackSquarePrefab: {fileID: 6131082117616242651, guid: 68244fd3643c47540bf85810672046ab, type: 3}
   cursorPrefab: {fileID: 6469598983641623003, guid: 3939fdd04699fec498c18edd5427ddc8, type: 3}
-  turnTime: 5
-  timerBar: {fileID: 799641618}
+  boardParentTransform: {fileID: 309345489}
   whitePlayerColor: {r: 1, g: 0, b: 0, a: 1}
   blackPlayerColor: {r: 0, g: 0, b: 1, a: 1}
   whitePiecePrefab: {fileID: 6766838018543776728, guid: 360462f32889ace47bdc0ef8e6af5e35, type: 3}
   blackPiecePrefab: {fileID: 6073023978583093832, guid: 2620482c169929e478ce0f1217ddfc3a, type: 3}
+  YOffsetForPieces: 0.5
+  turnTime: 20
+  timerBar: {fileID: 799641618}
+  startWithRandomPlayer: 1
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -933,5 +967,6 @@ SceneRoots:
   - {fileID: 963194228}
   - {fileID: 705507995}
   - {fileID: 1549376456}
-  - {fileID: 831260669}
   - {fileID: 2108600879}
+  - {fileID: 831260669}
+  - {fileID: 309345489}

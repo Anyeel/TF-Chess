@@ -7,17 +7,39 @@ public class CursorVisual : MonoBehaviour
 
     private MeshRenderer[] cursorWalls;
 
-    void Start()
+    void Awake()
     {
         int childCount = transform.childCount;
+        if (childCount == 0)
+        {
+            Debug.LogWarning($"CursorVisual ({gameObject.name}): No tiene GameObjects hijos. No se configurarán los muros del cursor.", this);
+            cursorWalls = new MeshRenderer[0];
+            return;
+        }
+
         cursorWalls = new MeshRenderer[childCount];
+        bool allRenderersFound = true;
 
         for (int i = 0; i < childCount; i++)
         {
-            MeshRenderer renderer = transform.GetChild(i).GetComponent<MeshRenderer>();
+            Transform childTransform = transform.GetChild(i);
+            MeshRenderer renderer = childTransform.GetComponent<MeshRenderer>();
 
-            cursorWalls[i] = renderer;
-            
+            if (renderer != null)
+            {
+                cursorWalls[i] = renderer;
+            }
+            else
+            {
+                Debug.LogError($"CursorVisual ({gameObject.name}): El hijo '{childTransform.name}' no tiene un componente MeshRenderer.", childTransform);
+                cursorWalls[i] = null;
+                allRenderersFound = false;
+            }
+        }
+
+        if (!allRenderersFound)
+        {
+            Debug.LogError($"CursorVisual ({gameObject.name}): No todos los hijos tenían MeshRenderer.", this);
         }
     }
 
@@ -30,9 +52,24 @@ public class CursorVisual : MonoBehaviour
     {
         Material selectedMaterial = isBlackPlayer ? blackPlayerMaterial : whitePlayerMaterial;
 
-        foreach (var wall in cursorWalls)
+        if (selectedMaterial == null)
         {
-            wall.material = selectedMaterial;
+            Debug.LogError($"CursorVisual ({gameObject.name}): El material seleccionado es nulo. ¿Has asignado blackPlayerMaterial y whitePlayerMaterial en el Inspector?", this);
+            return;
+        }
+
+        if (cursorWalls == null)
+        {
+            Debug.LogError($"CursorVisual ({gameObject.name}): cursorWalls no está inicializado. ¿Se ejecutó Start correctamente?", this);
+            return;
+        }
+
+        foreach (var wallRenderer in cursorWalls) // Cambiado el nombre de la variable para claridad
+        {
+            if (wallRenderer != null) // IMPORTANTE: Saltar si el renderer es nulo
+            {
+                wallRenderer.material = selectedMaterial;
+            }
         }
     }
 }

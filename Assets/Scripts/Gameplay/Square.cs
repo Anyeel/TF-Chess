@@ -2,17 +2,17 @@ using UnityEngine;
 
 public class Square
 {
-    public Vector2Int Position { get; set; }
-    public GameObject Instance { get; set; }
-    public Vector2Int Index { get; set; } 
+    public Vector2Int Position { get; private set; }
+    public GameObject Instance { get; private set; }
+    public Vector2Int Index { get; private set; }
+    public IGameEntity ContainedEntity { get; set; }
 
-    public Square(Vector2Int position, GameObject prefab, Vector2Int index)
+    public Square(Vector2Int index, GameObject squarePrefab, Transform parentTransform)
     {
-        Position = position;
-        Index = index;
-
-        Instance = GameObject.Instantiate(prefab, new Vector3(position.x, 0, position.y), Quaternion.identity);
+        this.Index = index;
+        this.Position = new Vector2Int(index.x, index.y);
+        Instance = GameObject.Instantiate(squarePrefab, new Vector3(this.Position.x, 0, this.Position.y), Quaternion.identity);
+        if (parentTransform != null) Instance.transform.SetParent(parentTransform);
+        Instance.name = $"Square_{index.x}_{index.y}";
     }
 }
-
-

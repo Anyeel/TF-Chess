@@ -1,69 +1,104 @@
 using UnityEngine;
 
-public class Piece
+public class Piece : IAttackable, IGameEntity
 {
-    public Vector2Int Position { get; private set; } // Posición lógica en el tablero
     public bool IsBlack { get; private set; }
-    public GameObject PieceGameObject { get; private set; } // Referencia al prefab instanciado
-    private float yOffsetOnBoard; // El YOffset para la pieza en el tablero
+    public GameObject PieceGameObject { get; private set; }
+    public GameObject EntityGameObject => PieceGameObject;
+    public Vector2Int Position { get; set; }
+    public int CurrentHealth { get; private set; }
+    public int MaxHealth { get; private set; } = 3; 
+    public bool IsOnAttackCooldown { get; private set; }
+    private float currentAttackCooldownTimer;
+    public float AttackCooldownDuration { get; set; } = 2f; 
+    public PieceVisual Visual { get; private set; } 
+    public float yOffsetOnBoard;
 
-    // Constructor usado por GameManager
-    public Piece(Vector2Int startPosition, bool isBlack, GameObject pieceGameObject, float yOffset)
+    public Piece(Vector2Int startPosition, bool isBlack, GameObject pieceGameObject, float yOffset, PieceVisual visualComponent)
     {
         Position = startPosition;
         IsBlack = isBlack;
         PieceGameObject = pieceGameObject;
         this.yOffsetOnBoard = yOffset;
+        this.Visual = visualComponent;
 
-        // GameManager ya establece la posición visual inicial al instanciar.
-        // Si quisieras asegurar la posición aquí también:
-        // PieceGameObject.transform.position = board.GetSquareAtPosition(startPosition.x, startPosition.y).Instance.transform.position + new Vector3(0, yOffsetOnBoard, 0);
-        // Pero esto requeriría pasar 'board' al constructor, lo cual es posible pero no estrictamente necesario si GameManager lo maneja bien.
+        CurrentHealth = MaxHealth;
+        IsOnAttackCooldown = false;
+        currentAttackCooldownTimer = 0f;
+
+        Visual?.UpdateHealthVisual(CurrentHealth, MaxHealth);
+        Visual?.UpdateCooldownVisual(IsOnAttackCooldown);
     }
 
-    // Actualiza la posición lógica y visual de la pieza
     public void UpdatePosition(Vector2Int newLogicalPosition, Board boardReference)
     {
-        Position = newLogicalPosition; // Actualizar posición lógica
-
+        Position = newLogicalPosition;
         if (PieceGameObject != null && boardReference != null)
         {
             Square targetSquare = boardReference.GetSquareAtPosition(newLogicalPosition.x, newLogicalPosition.y);
             if (targetSquare != null && targetSquare.Instance != null)
             {
-                // Mover el GameObject a la nueva posición en el tablero, aplicando el YOffset
                 PieceGameObject.transform.position = targetSquare.Instance.transform.position + new Vector3(0, yOffsetOnBoard, 0);
-            }
-            else
-            {
-                Debug.LogError($"Pieza: Casilla objetivo en {newLogicalPosition} no encontrada o su instancia es null.");
             }
         }
     }
 
-    // Llamado cuando la pieza es recogida (para feedback visual)
-    public void PickUp()
+    public void TakeDamage(int amount)
+    {
+        CurrentHealth -= amount;
+        if (CurrentHealth < 0) CurrentHealth = 0;
+
+        Visual?.UpdateHealthVisual(CurrentHealth, MaxHealth);
+
+        if (CurrentHealth <= 0)
+        {
+            HandleDestruction();
+        }
+    }
+
+    public void Heal(int amount)
+    {
+        CurrentHealth += amount;
+        if (CurrentHealth > MaxHealth) CurrentHealth = MaxHealth;
+
+        Visual?.UpdateHealthVisual(CurrentHealth, MaxHealth);
+    }
+
+    public void StartAttackCooldown()
+    {
+        if (!IsOnAttackCooldown)
+        {
+            IsOnAttackCooldown = true;
+            currentAttackCooldownTimer = AttackCooldownDuration;
+            Visual?.UpdateCooldownVisual(true);
+        }
+    }
+
+    public void TickCooldown(float deltaTime)
+    {
+        if (IsOnAttackCooldown)
+        {
+            currentAttackCooldownTimer -= deltaTime;
+            if (currentAttackCooldownTimer <= 0)
+            {
+                IsOnAttackCooldown = false;
+                currentAttackCooldownTimer = 0;
+                Visual?.UpdateCooldownVisual(false);
+            }
+        }
+    }
+
+    private void HandleDestruction()
     {
         if (PieceGameObject != null)
         {
-            // Ejemplo: Elevar la pieza un poco más para indicar que está seleccionada
-            // PieceGameObject.transform.position += new Vector3(0, 0.2f, 0); // Ajusta este valor como necesites
+            PieceGameObject.SetActive(false); 
         }
-        Debug.Log($"Pieza en {Position} recogida.");
-    }
 
-    // Llamado cuando la pieza es colocada o deseleccionada (para feedback visual)
-    public void Place(Board boardReference)
-    {
-        if (PieceGameObject != null && boardReference != null)
+        GameManager gm = Object.FindObjectOfType<GameManager>(); 
+        if (gm != null)
         {
-            // Asegurar que la pieza está en su altura correcta sobre la casilla actual
-            Square currentSquare = boardReference.GetSquareAtPosition(Position.x, Position.y);
-            if (currentSquare != null && currentSquare.Instance != null)
-            {
-                PieceGameObject.transform.position = currentSquare.Instance.transform.position + new Vector3(0, yOffsetOnBoard, 0);
-            }
+            gm.OnPieceDestroyed(this);
         }
-        Debug.Log($"Pieza en {Position} colocada/deseleccionada.");
     }
 }

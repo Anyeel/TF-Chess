@@ -2,51 +2,52 @@ using UnityEngine;
 
 public class Board
 {
-    private Square[,] squares;
-
     public int Width { get; private set; }
     public int Height { get; private set; }
+    private Square[,] squares;
 
-    public Board(int width, int height, GameObject whiteSquarePrefab, GameObject blackSquarePrefab)
+    public Board(int width, int height, GameObject whiteSquarePrefab, GameObject blackSquarePrefab, Transform boardParentTransform = null)
     {
-        if (width <= 0 || height <= 0)
-        {
-            throw new System.ArgumentException("El ancho y alto del tablero deben ser mayores que 0.");
-        }
-
         Width = width;
         Height = height;
+        squares = new Square[Width, Height];
 
-        squares = new Square[width, height];
-
-        InitializeSquares(whiteSquarePrefab, blackSquarePrefab);
-    }
-
-    private void InitializeSquares(GameObject whiteSquarePrefab, GameObject blackSquarePrefab)
-    {
-        for (int i = 0; i < Width; i++)
+        for (int x = 0; x < Width; x++)
         {
-            for (int j = 0; j < Height; j++)
+            for (int y = 0; y < Height; y++)
             {
-                squares[i, j] = CreateSquare(i, j, whiteSquarePrefab, blackSquarePrefab);
+                GameObject prefabToUse = ((x + y) % 2 == 0) ? whiteSquarePrefab : blackSquarePrefab;
+                squares[x, y] = new Square(new Vector2Int(x, y), prefabToUse, boardParentTransform);
             }
         }
     }
 
-    private Square CreateSquare(int x, int y, GameObject whiteSquarePrefab, GameObject blackSquarePrefab)
-    {
-        Vector2Int index = new Vector2Int(x + 1, y + 1);
-        GameObject prefab = (x + y) % 2 == 0 ? whiteSquarePrefab : blackSquarePrefab;
-        return new Square(new Vector2Int(x, y), prefab, index);
-    }
-
     public Square GetSquareAtPosition(int x, int y)
     {
-        return IsValidPosition(x, y) ? squares[x, y] : null;
+        if (x < 0 || x >= Width || y < 0 || y >= Height)
+        {
+            Debug.LogWarning($"Intento de acceder a Square fuera de límites: ({x},{y})");
+            return null;
+        }
+        return squares[x, y];
     }
 
-    private bool IsValidPosition(int x, int y)
+    public IGameEntity GetEntityAtPosition(Vector2Int position)
     {
-        return x >= 0 && x < Width && y >= 0 && y < Height;
+        Square square = GetSquareAtPosition(position.x, position.y);
+        return square?.ContainedEntity;
+    }
+
+    public void SetEntityAtPosition(Vector2Int position, IGameEntity entity)
+    {
+        Square square = GetSquareAtPosition(position.x, position.y);
+        if (square != null)
+        {
+            square.ContainedEntity = entity;
+            if (entity != null)
+            {
+                entity.Position = position; 
+            }
+        }
     }
 }
