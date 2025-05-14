@@ -481,6 +481,8 @@ MonoBehaviour:
   whitePiecePrefab: {fileID: 6766838018543776728, guid: 360462f32889ace47bdc0ef8e6af5e35, type: 3}
   blackPiecePrefab: {fileID: 6073023978583093832, guid: 2620482c169929e478ce0f1217ddfc3a, type: 3}
   YOffsetForPieces: 0.5
+  pieceNum: 3
+  damage: 1
   turnTime: 20
   timerBar: {fileID: 799641618}
   startWithRandomPlayer: 1

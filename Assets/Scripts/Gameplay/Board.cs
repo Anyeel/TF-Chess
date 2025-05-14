@@ -2,19 +2,19 @@ using UnityEngine;
 
 public class Board
 {
-    public int Width { get; private set; }
-    public int Height { get; private set; }
+    public int width { get; private set; }
+    public int height { get; private set; }
     private Square[,] squares;
 
     public Board(int width, int height, GameObject whiteSquarePrefab, GameObject blackSquarePrefab, Transform boardParentTransform = null)
     {
-        Width = width;
-        Height = height;
-        squares = new Square[Width, Height];
+        this.width = width;
+        this.height = height;
+        squares = new Square[this.width, this.height];
 
-        for (int x = 0; x < Width; x++)
+        for (int x = 0; x < this.width; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < this.height; y++)
             {
                 GameObject prefabToUse = ((x + y) % 2 == 0) ? whiteSquarePrefab : blackSquarePrefab;
                 squares[x, y] = new Square(new Vector2Int(x, y), prefabToUse, boardParentTransform);
@@ -24,9 +24,8 @@ public class Board
 
     public Square GetSquareAtPosition(int x, int y)
     {
-        if (x < 0 || x >= Width || y < 0 || y >= Height)
+        if (x < 0 || x >= width || y < 0 || y >= height)
         {
-            Debug.LogWarning($"Intento de acceder a Square fuera de límites: ({x},{y})");
             return null;
         }
         return squares[x, y];
@@ -35,7 +34,7 @@ public class Board
     public IGameEntity GetEntityAtPosition(Vector2Int position)
     {
         Square square = GetSquareAtPosition(position.x, position.y);
-        return square?.ContainedEntity;
+        return square?.containedEntity;
     }
 
     public void SetEntityAtPosition(Vector2Int position, IGameEntity entity)
@@ -43,10 +42,10 @@ public class Board
         Square square = GetSquareAtPosition(position.x, position.y);
         if (square != null)
         {
-            square.ContainedEntity = entity;
+            square.containedEntity = entity;
             if (entity != null)
             {
-                entity.Position = position; 
+                entity.position = position; 
             }
         }
     }
