@@ -2,6 +2,11 @@ using UnityEngine;
 using UnityEngine.UI; 
 using System.Collections.Generic; 
 
+public struct InputKeys
+{
+    public KeyCode upKey;
+}
+
 public class GameManager : MonoBehaviour
 {
     [SerializeField] int boardWidth = 5;
@@ -32,12 +37,16 @@ public class GameManager : MonoBehaviour
     private bool isBlacksTurn;
     private bool gameOver = false;
 
-    private Vector3 cursorVisualOffset = new Vector3(-0.5f, 0.1f, 0); 
+    private Vector3 cursorVisualOffset = new Vector3(-0.5f, 0.1f, 0);
+
+    InputKeys p1Keys;
 
     void Start()
     {
+        //allPieces.Remove()
         Transform parentForSquares = boardParentTransform != null ? boardParentTransform : transform;
         board = new Board(boardWidth, boardHeight, whiteSquarePrefab, blackSquarePrefab, parentForSquares);
+        // board[0, 1].containedEntity
 
         Vector2Int cursorStartPos = new Vector2Int(boardWidth / 2, boardHeight / 2);
         cursorLogic = new CursorLogic(boardWidth, boardHeight, cursorStartPos, board);
@@ -72,6 +81,11 @@ public class GameManager : MonoBehaviour
         Vector2Int moveDirection = Vector2Int.zero;
         bool interactPressed = false;
         bool attackPressed = false;
+
+        //if (Input.GetKeyDown(keys.upKey))
+        //{
+
+        //}
 
         if (isBlacksTurn) 
         {
@@ -159,7 +173,7 @@ public class GameManager : MonoBehaviour
     {
         if (cursorLogic.IsHoldingPiece())
         {
-            Piece attackingPiece = cursorLogic.GetHeldPiece();
+            Piece attackingPiece = cursorLogic.GetHeldPiece();// board[cursorLogic.currentPosition].containedEntity
             if (attackingPiece != null && !attackingPiece.isOnAttackCooldown)
             {
                 if (attackingPiece.isBlack == isBlacksTurn) 
@@ -171,7 +185,7 @@ public class GameManager : MonoBehaviour
                     {
                         Vector2Int targetPos = attackOrigin + dir;
 
-                        if (targetPos.x >= 0 && targetPos.x < boardWidth &&
+                        if (targetPos.x >= 0 && targetPos.x < boardWidth && //board.IsOOB(pos)
                             targetPos.y >= 0 && targetPos.y < boardHeight)
                         {
                             IGameEntity entityOnSquare = board.GetEntityAtPosition(targetPos);

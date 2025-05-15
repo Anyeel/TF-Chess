@@ -28,6 +28,8 @@ public class Piece : IAttackable, IGameEntity
 
         visual?.UpdateHealthVisual(currentHealth, maxHealth);
         visual?.UpdateCooldownVisual(isOnAttackCooldown);
+
+        //GameObject.FindAnyObjectByType<CoroutineManager>().StartCoroutine
     }
 
     public void UpdatePosition(Vector2Int newLogicalPosition, Board boardReference)

@@ -49,4 +49,11 @@ public class Board
             }
         }
     }
+
+
+    public Square this[int x, int y]
+    {
+        get => squares[x, y];
+        set => squares[x, y] = value;
+    }
 }
