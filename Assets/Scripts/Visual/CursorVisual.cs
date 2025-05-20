@@ -20,7 +20,6 @@ public class CursorVisual : MonoBehaviour
                
             cursorWalls[i] = renderer;
         }
-
     }
 
     public void UpdatePosition(Vector3 newPosition)

@@ -40,7 +40,7 @@ public class CursorLogic
         {
             if (allowedMoveSquares.Contains(newPotentialPosition))
             {
-                IGameEntity entityAtTarget = boardReference.GetEntityAtPosition(newPotentialPosition);
+                GameEntity entityAtTarget = boardReference.GetEntityAtPosition(newPotentialPosition);
                 if (entityAtTarget == null || newPotentialPosition == originalPickUpPosition)
                 {
                     currentPosition = newPotentialPosition;
@@ -54,7 +54,7 @@ public class CursorLogic
     {
         if (heldPiece == null) 
         {
-            IGameEntity entityOnSquare = boardReference.GetEntityAtPosition(currentPosition);
+            GameEntity entityOnSquare = boardReference.GetEntityAtPosition(currentPosition);
             if (entityOnSquare is Piece pieceToPick) 
             {
                 if (pieceToPick.isBlack == isCurrentPlayerBlack && pieceToPick.entityGameObject.activeInHierarchy)
@@ -71,7 +71,7 @@ public class CursorLogic
         }
         else 
         {
-            IGameEntity entityAtTarget = boardReference.GetEntityAtPosition(currentPosition);
+            GameEntity entityAtTarget = boardReference.GetEntityAtPosition(currentPosition);
             if (entityAtTarget == null || currentPosition == originalPickUpPosition) 
             {
                 boardReference.SetEntityAtPosition(currentPosition, heldPiece);
@@ -102,7 +102,7 @@ public class CursorLogic
             if (targetPos.x >= 0 && targetPos.x < boardWidth &&
                 targetPos.y >= 0 && targetPos.y < boardHeight)
             {
-                IGameEntity entityAtTarget = boardReference.GetEntityAtPosition(targetPos);
+                GameEntity entityAtTarget = boardReference.GetEntityAtPosition(targetPos);
                 if (entityAtTarget == null)
                 {
                     allowedMoveSquares.Add(targetPos);
@@ -115,7 +115,7 @@ public class CursorLogic
     {
         if (heldPiece != null)
         {
-            IGameEntity entityAtTarget = boardReference.GetEntityAtPosition(currentPosition);
+            GameEntity entityAtTarget = boardReference.GetEntityAtPosition(currentPosition);
 
             if (entityAtTarget == null || currentPosition == originalPickUpPosition)
             {

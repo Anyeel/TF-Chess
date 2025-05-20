@@ -1,26 +1,32 @@
 using UnityEngine;
 
-public class Piece : IAttackable, IGameEntity
+public class Piece : GameEntity, IAttackable
 {
     public bool isBlack { get; private set; }
     public GameObject pieceGameObject { get; private set; }
-    public GameObject entityGameObject => pieceGameObject;
-    public Vector2Int position { get; set; }
+    public override GameObject entityGameObject => pieceGameObject;
+    public override Vector2Int position
+    {
+        get => base.position;
+        set
+        {
+            base.position = value;
+        }
+    }
     public int currentHealth { get; private set; }
-    public int maxHealth { get; private set; } = 3; 
+    public int maxHealth { get; private set; } = 3;
     public bool isOnAttackCooldown { get; private set; }
     private float currentAttackCooldownTimer;
-    public float attackCooldownDuration { get; set; } = 2f; 
-    public PieceVisual visual { get; private set; } 
-    public float yOffsetOnBoard;
+    public float attackCooldownDuration { get; set; } = 2f;
+    public PieceVisual visual { get; private set; }
 
-    public Piece(Vector2Int startPosition, bool isBlack, GameObject pieceGameObject, float yOffset, PieceVisual visualComponent)
+    public Piece(Vector2Int startPosition, bool isBlack, GameObject pieceGameObject)
+        : base(pieceGameObject, startPosition)
     {
-        position = startPosition;
         this.isBlack = isBlack;
         this.pieceGameObject = pieceGameObject;
-        this.yOffsetOnBoard = yOffset;
-        this.visual = visualComponent;
+
+        this.visual = pieceGameObject.GetComponent<PieceVisual>();
 
         currentHealth = maxHealth;
         isOnAttackCooldown = false;
@@ -28,8 +34,6 @@ public class Piece : IAttackable, IGameEntity
 
         visual?.UpdateHealthVisual(currentHealth, maxHealth);
         visual?.UpdateCooldownVisual(isOnAttackCooldown);
-
-        //GameObject.FindAnyObjectByType<CoroutineManager>().StartCoroutine
     }
 
     public void UpdatePosition(Vector2Int newLogicalPosition, Board boardReference)
@@ -40,7 +44,7 @@ public class Piece : IAttackable, IGameEntity
             Square targetSquare = boardReference.GetSquareAtPosition(newLogicalPosition.x, newLogicalPosition.y);
             if (targetSquare != null && targetSquare.instance != null)
             {
-                pieceGameObject.transform.position = targetSquare.instance.transform.position + new Vector3(0, yOffsetOnBoard, 0);
+                pieceGameObject.transform.position = targetSquare.instance.transform.position + new Vector3(0, 0, 0);
             }
         }
     }
@@ -92,9 +96,6 @@ public class Piece : IAttackable, IGameEntity
 
     private void HandleDestruction()
     {
-        if (pieceGameObject != null)
-        {
-            pieceGameObject.SetActive(false); 
-        }
+        pieceGameObject.SetActive(false);
     }
 }

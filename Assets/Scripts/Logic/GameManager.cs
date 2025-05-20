@@ -1,10 +1,25 @@
 using UnityEngine;
-using UnityEngine.UI; 
-using System.Collections.Generic; 
+using UnityEngine.UI;
+using System.Collections.Generic;
 
 public struct InputKeys
 {
-    public KeyCode upKey;
+    public KeyCode up;
+    public KeyCode down;
+    public KeyCode left;
+    public KeyCode right;
+    public KeyCode interact;
+    public KeyCode attack;
+
+    public InputKeys(KeyCode up, KeyCode down, KeyCode left, KeyCode right, KeyCode interact, KeyCode attack)
+    {
+        this.up = up;
+        this.down = down;
+        this.left = left;
+        this.right = right;
+        this.interact = interact;
+        this.attack = attack;
+    }
 }
 
 public class GameManager : MonoBehaviour
@@ -16,37 +31,30 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject cursorPrefab;
     [SerializeField] Transform boardParentTransform;
 
-    [SerializeField] Color whitePlayerColor = Color.red;
-    [SerializeField] Color blackPlayerColor = Color.blue;
-    [SerializeField] GameObject whitePiecePrefab; 
+    [SerializeField] GameObject whitePiecePrefab;
     [SerializeField] GameObject blackPiecePrefab;
-    [SerializeField] float YOffsetForPieces = 0.5f;
     [SerializeField] int pieceNum = 3;
-    [SerializeField] int damage = 1; 
+    [SerializeField] int damage = 1;
 
-    [SerializeField] float turnTime = 15f;
-    [SerializeField] Image timerBar;
-    [SerializeField] bool startWithRandomPlayer = true;
+    [SerializeField] TurnManager turnManager;
 
     private Board board;
     private CursorLogic cursorLogic;
     private CursorVisual cursorVisual;
     private List<Piece> allPieces = new List<Piece>();
 
-    private float timeLeftInTurn;
-    private bool isBlacksTurn;
+    private InputKeys blackKeys = new InputKeys(KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.RightShift, KeyCode.Return);
+    private InputKeys whiteKeys = new InputKeys(KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D, KeyCode.LeftShift, KeyCode.Space);
+
     private bool gameOver = false;
+    public bool IsGameOver() => gameOver;
 
     private Vector3 cursorVisualOffset = new Vector3(-0.5f, 0.1f, 0);
 
-    InputKeys p1Keys;
-
     void Start()
     {
-        //allPieces.Remove()
         Transform parentForSquares = boardParentTransform != null ? boardParentTransform : transform;
         board = new Board(boardWidth, boardHeight, whiteSquarePrefab, blackSquarePrefab, parentForSquares);
-        // board[0, 1].containedEntity
 
         Vector2Int cursorStartPos = new Vector2Int(boardWidth / 2, boardHeight / 2);
         cursorLogic = new CursorLogic(boardWidth, boardHeight, cursorStartPos, board);
@@ -58,67 +66,39 @@ public class GameManager : MonoBehaviour
         cursorVisual = cursorObject.GetComponent<CursorVisual>();
 
         InitializePieces();
-
-        if (startWithRandomPlayer) isBlacksTurn = Random.Range(0, 2) == 0;
-        else isBlacksTurn = false;
-        
-        StartNewTurn();
     }
 
     void Update()
     {
-        if (timeLeftInTurn > 0) 
-        {
-            HandlePlayerInput();
-        }
-
-        UpdateTurnTimerVisuals();
+        HandlePlayerInput();
         UpdatePieceCooldowns();
     }
 
     void HandlePlayerInput()
     {
+        InputKeys keys = turnManager.isBlacksTurn ? blackKeys : whiteKeys;
+
         Vector2Int moveDirection = Vector2Int.zero;
         bool interactPressed = false;
         bool attackPressed = false;
 
-        //if (Input.GetKeyDown(keys.upKey))
-        //{
+        if (Input.GetKeyDown(keys.up)) moveDirection = Vector2Int.up;
+        else if (Input.GetKeyDown(keys.down)) moveDirection = Vector2Int.down;
+        else if (Input.GetKeyDown(keys.left)) moveDirection = Vector2Int.left;
+        else if (Input.GetKeyDown(keys.right)) moveDirection = Vector2Int.right;
 
-        //}
-
-        if (isBlacksTurn) 
-        {
-            if (Input.GetKeyDown(KeyCode.UpArrow)) moveDirection = Vector2Int.up;
-            else if (Input.GetKeyDown(KeyCode.DownArrow)) moveDirection = Vector2Int.down;
-            else if (Input.GetKeyDown(KeyCode.LeftArrow)) moveDirection = Vector2Int.left;
-            else if (Input.GetKeyDown(KeyCode.RightArrow)) moveDirection = Vector2Int.right;
-
-            if (Input.GetKeyDown(KeyCode.RightShift)) interactPressed = true;
-            if (Input.GetKeyDown(KeyCode.Return)) attackPressed = true;
-        }
-        else 
-        {
-            if (Input.GetKeyDown(KeyCode.W)) moveDirection = Vector2Int.up;
-            else if (Input.GetKeyDown(KeyCode.S)) moveDirection = Vector2Int.down;
-            else if (Input.GetKeyDown(KeyCode.A)) moveDirection = Vector2Int.left;
-            else if (Input.GetKeyDown(KeyCode.D)) moveDirection = Vector2Int.right;
-
-            if (Input.GetKeyDown(KeyCode.LeftShift)) interactPressed = true;
-            if (Input.GetKeyDown(KeyCode.Space)) attackPressed = true;
-        }
+        if (Input.GetKeyDown(keys.interact)) interactPressed = true;
+        if (Input.GetKeyDown(keys.attack)) attackPressed = true;
 
         if (moveDirection != Vector2Int.zero)
         {
             cursorLogic.Move(moveDirection);
             UpdateCursorVisualPosition();
         }
-
         if (interactPressed)
         {
-            cursorLogic.HandlePieceInteraction(isBlacksTurn);
+            cursorLogic.HandlePieceInteraction(turnManager.isBlacksTurn);
         }
-
         if (attackPressed)
         {
             ExecuteAttack();
@@ -127,47 +107,70 @@ public class GameManager : MonoBehaviour
 
     void UpdateCursorVisualPosition()
     {
-        if (cursorVisual == null || board == null || cursorLogic == null) return;
-
         Square currentCursorSquare = board.GetSquareAtPosition(cursorLogic.currentPosition.x, cursorLogic.currentPosition.y);
-        if (currentCursorSquare != null && currentCursorSquare.instance != null)
-        {
-            cursorVisual.UpdatePosition(currentCursorSquare.instance.transform.position + cursorVisualOffset);
-        }
+        cursorVisual.UpdatePosition(currentCursorSquare.instance.transform.position + cursorVisualOffset);
     }
-
 
     void InitializePieces()
     {
         allPieces.Clear();
 
-        int midX = boardWidth / 2;
-        Vector2Int[] whiteStartPositions = {new Vector2Int(midX -1, 0), new Vector2Int(midX, 0), new Vector2Int(midX + 1, 0)};
-        Vector2Int[] blackStartPositions = {new Vector2Int(midX -1, boardHeight -1), new Vector2Int(midX, boardHeight -1), new Vector2Int(midX + 1, boardHeight-1)};
+        List<Vector2Int> whiteStartPositionsList = new List<Vector2Int>();
+        List<Vector2Int> blackStartPositionsList = new List<Vector2Int>();
 
-        CreateInitialPieces(whiteStartPositions, whitePiecePrefab, false);
-        CreateInitialPieces(blackStartPositions, blackPiecePrefab, true);
+        int whitePiecesPlaced = 0;
+        for (int i = 0; i < pieceNum; i++)
+        {
+            int xPos = i % boardWidth;
+            int yRowOffset = i / boardWidth;
+            int yPos = 0 + yRowOffset;
+            if (pieceNum == 3) whiteStartPositionsList.Add(new Vector2Int(xPos + 1, yPos));
+            else whiteStartPositionsList.Add(new Vector2Int(xPos, yPos));
+            whitePiecesPlaced++;
+        }
+
+        int blackPiecesPlaced = 0;
+        for (int i = 0; i < pieceNum; i++)
+        {
+            int xPos = i % boardWidth;
+            int yRowOffset = i / boardWidth;
+            int yPos = (boardHeight - 1) - yRowOffset;
+
+            if (pieceNum == 3) blackStartPositionsList.Add(new Vector2Int(xPos + 1, yPos));
+            else blackStartPositionsList.Add(new Vector2Int(xPos, yPos));
+            blackPiecesPlaced++;
+        }
+
+        CreateInitialPieces(whiteStartPositionsList.ToArray(), whitePiecePrefab, false);
+        CreateInitialPieces(blackStartPositionsList.ToArray(), blackPiecePrefab, true);
     }
 
     void CreateInitialPieces(Vector2Int[] startPositions, GameObject piecePrefab, bool isBlack)
     {
-        for (int i = 0; i < pieceNum; i++)
+        for (int i = 0; i < startPositions.Length; i++)
         {
             Vector2Int pos = startPositions[i];
+
             Square pieceSquare = board.GetSquareAtPosition(pos.x, pos.y);
             if (pieceSquare != null && pieceSquare.instance != null)
             {
-                Vector3 visualPos = pieceSquare.instance.transform.position + new Vector3(0, YOffsetForPieces, 0);
+                Vector3 visualPos = pieceSquare.instance.transform.position + new Vector3(0, 0, 0);
                 GameObject pieceObj = Instantiate(piecePrefab, visualPos, Quaternion.identity);
-                PieceVisual pv = pieceObj.GetComponent<PieceVisual>();
 
-                Piece piece = new Piece(pos, isBlack, pieceObj, YOffsetForPieces, pv);
+                Piece piece = new Piece(pos, isBlack, pieceObj);
                 allPieces.Add(piece);
                 board.SetEntityAtPosition(pos, piece);
             }
         }
     }
 
+    public void ForceDropSelectedPieceOnCurrentPlayer()
+    {
+        if (cursorLogic != null)
+        {
+            cursorLogic.ForceDropSelectedPiece();
+        }
+    }
 
     void ExecuteAttack()
     {
@@ -176,7 +179,7 @@ public class GameManager : MonoBehaviour
             Piece attackingPiece = cursorLogic.GetHeldPiece();// board[cursorLogic.currentPosition].containedEntity
             if (attackingPiece != null && !attackingPiece.isOnAttackCooldown)
             {
-                if (attackingPiece.isBlack == isBlacksTurn) 
+                if (attackingPiece.isBlack == turnManager.isBlacksTurn)
                 {
                     Vector2Int attackOrigin = attackingPiece.position;
                     Vector2Int[] attackDirections = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
@@ -188,14 +191,11 @@ public class GameManager : MonoBehaviour
                         if (targetPos.x >= 0 && targetPos.x < boardWidth && //board.IsOOB(pos)
                             targetPos.y >= 0 && targetPos.y < boardHeight)
                         {
-                            IGameEntity entityOnSquare = board.GetEntityAtPosition(targetPos);
+                            GameEntity entityOnSquare = board.GetEntityAtPosition(targetPos);
 
-                            if (entityOnSquare != null) 
+                            if (entityOnSquare is IAttackable attackableTarget)
                             {
-                                if (entityOnSquare is IAttackable attackableTarget)
-                                {
-                                    attackableTarget.TakeDamage(damage);
-                                }
+                                attackableTarget.TakeDamage(damage);
                             }
                         }
                     }
@@ -204,20 +204,19 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-
-    void UpdatePieceCooldowns()
+    public void UpdatePieceCooldowns()
     {
         float dt = Time.deltaTime;
-        for (int i = allPieces.Count - 1; i >= 0; i--) 
+        for (int i = allPieces.Count - 1; i >= 0; i--)
         {
             Piece piece = allPieces[i];
             if (piece.pieceGameObject.activeInHierarchy)
             {
                 piece.Cooldown(dt);
             }
-            else 
+            else
             {
-                if (board.GetEntityAtPosition(piece.position) == piece) 
+                if (board.GetEntityAtPosition(piece.position) == piece)
                 {
                     board.SetEntityAtPosition(piece.position, null);
                 }
@@ -226,63 +225,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-
-    void StartNewTurn()
-    {
-        timeLeftInTurn = turnTime;
-
-        cursorVisual.UpdateMaterial(isBlacksTurn); 
-
-        UpdateTimerBarColor();
-    }
-
-    void UpdateTurnTimerVisuals()
-    {
-        if (timerBar != null)
-        {
-            timerBar.fillAmount = Mathf.Clamp01(timeLeftInTurn / turnTime);
-        }
-    }
-
-    void UpdateTimerBarColor()
-    {
-        if (timerBar != null)
-        {
-            timerBar.color = isBlacksTurn ? blackPlayerColor : whitePlayerColor;
-            timerBar.fillOrigin = isBlacksTurn ? (int)Image.OriginHorizontal.Right : (int)Image.OriginHorizontal.Left;
-        }
-    }
-
-    void FixedUpdate() 
-    {
-        if (timeLeftInTurn > 0)
-        {
-            timeLeftInTurn -= Time.fixedDeltaTime; 
-            if (timeLeftInTurn <= 0)
-            {
-                timeLeftInTurn = 0;
-                EndTurn();
-            }
-        }
-    }
-
-    void EndTurn()
-    {
-
-        if (cursorLogic != null)
-        {
-            cursorLogic.ForceDropSelectedPiece(); 
-        }
-
-        isBlacksTurn = !isBlacksTurn;
-        CheckWinCondition();
-        if (!IsGameOver()) 
-        {
-            StartNewTurn();
-        }
-    }
-
-    void CheckWinCondition()
+    public void CheckWinCondition()
     {
         if (gameOver) return;
 
@@ -298,7 +241,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (whitePiecesLeft == 0 && blackPiecesLeft > 0) 
+        if (whitePiecesLeft == 0 && blackPiecesLeft > 0)
         {
             DeclareWinner(true);
         }
@@ -306,22 +249,13 @@ public class GameManager : MonoBehaviour
         {
             DeclareWinner(false);
         }
-        else if (whitePiecesLeft == 0 && blackPiecesLeft == 0)
-        {
-            gameOver = true;
-        }
     }
 
     void DeclareWinner(bool blackPlayerWins)
     {
+        if (gameOver) return;
         gameOver = true;
         string winner = blackPlayerWins ? "Jugador Negro" : "Jugador Blanco";
         Debug.Log($"¡JUEGO TERMINADO! El ganador es: {winner}");
-        Time.timeScale = 0;
-    }
-
-    bool IsGameOver()
-    {
-        return gameOver;
     }
 }

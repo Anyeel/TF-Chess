@@ -31,25 +31,21 @@ public class Board
         return squares[x, y];
     }
 
-    public IGameEntity GetEntityAtPosition(Vector2Int position)
+    public GameEntity GetEntityAtPosition(Vector2Int position)
     {
         Square square = GetSquareAtPosition(position.x, position.y);
         return square?.containedEntity;
     }
 
-    public void SetEntityAtPosition(Vector2Int position, IGameEntity entity)
+    public void SetEntityAtPosition(Vector2Int position, GameEntity entity)
     {
         Square square = GetSquareAtPosition(position.x, position.y);
-        if (square != null)
+        square.containedEntity = entity;
+        if (entity != null)
         {
-            square.containedEntity = entity;
-            if (entity != null)
-            {
-                entity.position = position; 
-            }
+            entity.position = position;
         }
     }
-
 
     public Square this[int x, int y]
     {

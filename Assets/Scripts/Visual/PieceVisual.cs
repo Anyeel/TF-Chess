@@ -3,7 +3,6 @@ using UnityEngine;
 public class PieceVisual : MonoBehaviour
 {
     [SerializeField] private Transform modelPartToScaleForHealth;
-
     [SerializeField] private Material cooldownMaterial;
 
     private Vector3 initialScale;
@@ -13,10 +12,14 @@ public class PieceVisual : MonoBehaviour
     void Awake()
     {
         modelPartToScaleForHealth = transform;
+        
         initialScale = modelPartToScaleForHealth.localScale;
 
         pieceRenderer = GetComponent<Renderer>();
-        originalMaterial = pieceRenderer.material; 
+
+        pieceRenderer = GetComponentInChildren<Renderer>();
+
+        originalMaterial = pieceRenderer.material;    
     }
 
     public void UpdateHealthVisual(int currentHealth, int maxHealth)
@@ -24,12 +27,13 @@ public class PieceVisual : MonoBehaviour
         if (modelPartToScaleForHealth == null) return;
         if (maxHealth <= 0) return;
 
-        modelPartToScaleForHealth.localScale = new Vector3(initialScale.x, initialScale.y * ((float)currentHealth / maxHealth), initialScale.z);
+        float healthRatio = Mathf.Clamp01((float)currentHealth / maxHealth);
+        modelPartToScaleForHealth.localScale = new Vector3(initialScale.x, initialScale.y * healthRatio, initialScale.z);
     }
 
     public void UpdateCooldownVisual(bool isOnCooldown)
     {
-        if (isOnCooldown && cooldownMaterial != null)
+        if (isOnCooldown)
         {
             pieceRenderer.material = cooldownMaterial;
         }
