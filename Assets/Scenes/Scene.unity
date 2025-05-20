@@ -437,6 +437,7 @@ GameObject:
   - component: {fileID: 831260669}
   - component: {fileID: 831260671}
   - component: {fileID: 831260672}
+  - component: {fileID: 831260673}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -482,6 +483,7 @@ MonoBehaviour:
   pieceNum: 3
   damage: 1
   turnManager: {fileID: 831260672}
+  coroutineManager: {fileID: 831260673}
 --- !u!114 &831260672
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -494,12 +496,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12e578a7d0ccdac4596179dd261259ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  whitePlayerColor: {r: 1, g: 1, b: 1, a: 0}
-  blackPlayerColor: {r: 0, g: 0, b: 0, a: 0}
-  turnTime: 15
+  whitePlayerColor: {r: 1, g: 1, b: 1, a: 1}
+  blackPlayerColor: {r: 0, g: 0, b: 0, a: 1}
+  turnTimeTotal: 5
   timerBar: {fileID: 799641618}
-  startWithRandomPlayer: 0
+  startWithRandomPlayer: 1
   gameManager: {fileID: 831260671}
+--- !u!114 &831260673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 831260668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9de82aecf220be941a4fed29e0726525, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0

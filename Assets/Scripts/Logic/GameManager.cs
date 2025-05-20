@@ -37,11 +37,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] int damage = 1;
 
     [SerializeField] TurnManager turnManager;
+    [SerializeField] MyCoroutineManager coroutineManager;
 
     private Board board;
     private CursorLogic cursorLogic;
     private CursorVisual cursorVisual;
-    private List<Piece> allPieces = new List<Piece>();
+    private Piece[] allPieces;
 
     private InputKeys blackKeys = new InputKeys(KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.RightShift, KeyCode.Return);
     private InputKeys whiteKeys = new InputKeys(KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D, KeyCode.LeftShift, KeyCode.Space);
@@ -65,11 +66,15 @@ public class GameManager : MonoBehaviour
         GameObject cursorObject = Instantiate(cursorPrefab, visualCursorPos, Quaternion.identity);
         cursorVisual = cursorObject.GetComponent<CursorVisual>();
 
+        GameEvents.PieceDied.AddListener(OnPieceDied);
+        GameEvents.GameIsOver.AddListener(OnGameIsOver);
+
         InitializePieces();
     }
 
     void Update()
     {
+        if (gameOver) return;
         HandlePlayerInput();
         UpdatePieceCooldowns();
     }
@@ -113,12 +118,12 @@ public class GameManager : MonoBehaviour
 
     void InitializePieces()
     {
-        allPieces.Clear();
+        int totalPieces = pieceNum * 2;
+        allPieces = new Piece[totalPieces];
 
         List<Vector2Int> whiteStartPositionsList = new List<Vector2Int>();
         List<Vector2Int> blackStartPositionsList = new List<Vector2Int>();
 
-        int whitePiecesPlaced = 0;
         for (int i = 0; i < pieceNum; i++)
         {
             int xPos = i % boardWidth;
@@ -126,26 +131,23 @@ public class GameManager : MonoBehaviour
             int yPos = 0 + yRowOffset;
             if (pieceNum == 3) whiteStartPositionsList.Add(new Vector2Int(xPos + 1, yPos));
             else whiteStartPositionsList.Add(new Vector2Int(xPos, yPos));
-            whitePiecesPlaced++;
         }
 
-        int blackPiecesPlaced = 0;
         for (int i = 0; i < pieceNum; i++)
         {
             int xPos = i % boardWidth;
             int yRowOffset = i / boardWidth;
             int yPos = (boardHeight - 1) - yRowOffset;
-
             if (pieceNum == 3) blackStartPositionsList.Add(new Vector2Int(xPos + 1, yPos));
             else blackStartPositionsList.Add(new Vector2Int(xPos, yPos));
-            blackPiecesPlaced++;
         }
 
-        CreateInitialPieces(whiteStartPositionsList.ToArray(), whitePiecePrefab, false);
-        CreateInitialPieces(blackStartPositionsList.ToArray(), blackPiecePrefab, true);
+        int idx = 0;
+        idx = CreateInitialPieces(whiteStartPositionsList.ToArray(), whitePiecePrefab, false, idx);
+        CreateInitialPieces(blackStartPositionsList.ToArray(), blackPiecePrefab, true, idx);
     }
 
-    void CreateInitialPieces(Vector2Int[] startPositions, GameObject piecePrefab, bool isBlack)
+    int CreateInitialPieces(Vector2Int[] startPositions, GameObject piecePrefab, bool isBlack, int startIdx)
     {
         for (int i = 0; i < startPositions.Length; i++)
         {
@@ -158,10 +160,11 @@ public class GameManager : MonoBehaviour
                 GameObject pieceObj = Instantiate(piecePrefab, visualPos, Quaternion.identity);
 
                 Piece piece = new Piece(pos, isBlack, pieceObj);
-                allPieces.Add(piece);
+                allPieces[startIdx + i] = piece;
                 board.SetEntityAtPosition(pos, piece);
             }
         }
+        return startIdx + startPositions.Length;
     }
 
     public void ForceDropSelectedPieceOnCurrentPlayer()
@@ -176,7 +179,7 @@ public class GameManager : MonoBehaviour
     {
         if (cursorLogic.IsHoldingPiece())
         {
-            Piece attackingPiece = cursorLogic.GetHeldPiece();// board[cursorLogic.currentPosition].containedEntity
+            Piece attackingPiece = cursorLogic.GetHeldPiece();
             if (attackingPiece != null && !attackingPiece.isOnAttackCooldown)
             {
                 if (attackingPiece.isBlack == turnManager.isBlacksTurn)
@@ -188,7 +191,7 @@ public class GameManager : MonoBehaviour
                     {
                         Vector2Int targetPos = attackOrigin + dir;
 
-                        if (targetPos.x >= 0 && targetPos.x < boardWidth && //board.IsOOB(pos)
+                        if (targetPos.x >= 0 && targetPos.x < boardWidth &&
                             targetPos.y >= 0 && targetPos.y < boardHeight)
                         {
                             GameEntity entityOnSquare = board.GetEntityAtPosition(targetPos);
@@ -199,63 +202,81 @@ public class GameManager : MonoBehaviour
                             }
                         }
                     }
-                    attackingPiece.StartAttackCooldown();
+                    attackingPiece.StartAttackCooldown(coroutineManager);
                 }
             }
         }
     }
+
     public void UpdatePieceCooldowns()
     {
-        float dt = Time.deltaTime;
-        for (int i = allPieces.Count - 1; i >= 0; i--)
+        for (int i = 0; i < allPieces.Length; i++)
         {
             Piece piece = allPieces[i];
-            if (piece.pieceGameObject.activeInHierarchy)
-            {
-                piece.Cooldown(dt);
-            }
-            else
+            if (piece != null && !piece.pieceGameObject.activeInHierarchy)
             {
                 if (board.GetEntityAtPosition(piece.position) == piece)
                 {
                     board.SetEntityAtPosition(piece.position, null);
                 }
-                allPieces.RemoveAt(i);
-                CheckWinCondition();
+                allPieces[i] = null;
+                GameEvents.PieceDied.Invoke();
             }
         }
     }
+
     public void CheckWinCondition()
     {
         if (gameOver) return;
 
-        int whitePiecesLeft = 0;
-        int blackPiecesLeft = 0;
+        int whiteCount = 0;
+        int blackCount = 0;
 
-        foreach (Piece piece in allPieces)
+        for (int i = 0; i < allPieces.Length; i++)
         {
+            Piece piece = allPieces[i];
             if (piece.pieceGameObject.activeInHierarchy && piece.currentHealth > 0)
             {
-                if (piece.isBlack) blackPiecesLeft++;
-                else whitePiecesLeft++;
+                if (piece.isBlack) blackCount++;
+                else whiteCount++;
             }
         }
 
-        if (whitePiecesLeft == 0 && blackPiecesLeft > 0)
+        if (whiteCount == 0 || blackCount == 0)
         {
-            DeclareWinner(true);
-        }
-        else if (blackPiecesLeft == 0 && whitePiecesLeft > 0)
-        {
-            DeclareWinner(false);
+            GameEvents.GameIsOver.Invoke();
         }
     }
 
-    void DeclareWinner(bool blackPlayerWins)
+
+    void OnPieceDied()
+    {
+        CheckWinCondition();
+    }
+
+    void OnGameIsOver()
     {
         if (gameOver) return;
         gameOver = true;
-        string winner = blackPlayerWins ? "Jugador Negro" : "Jugador Blanco";
+
+        bool anyWhite = false;
+        bool anyBlack = false;
+
+        for (int i = 0; i < allPieces.Length; i++)
+        {
+            Piece piece = allPieces[i];
+            if (piece != null && piece.pieceGameObject.activeInHierarchy && piece.currentHealth > 0)
+            {
+                if (piece.isBlack) anyBlack = true;
+                else anyWhite = true;
+            }
+        }
+        string winner;
+
+        if (!anyWhite && anyBlack) winner = "Jugador Negro";
+        else winner = "Jugador Blanco";
+
         Debug.Log($"¡JUEGO TERMINADO! El ganador es: {winner}");
     }
+
 }

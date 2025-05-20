@@ -8,15 +8,11 @@ public class Piece : GameEntity, IAttackable
     public override Vector2Int position
     {
         get => base.position;
-        set
-        {
-            base.position = value;
-        }
+        set { base.position = value; }
     }
     public int currentHealth { get; private set; }
     public int maxHealth { get; private set; } = 3;
     public bool isOnAttackCooldown { get; private set; }
-    private float currentAttackCooldownTimer;
     public float attackCooldownDuration { get; set; } = 2f;
     public PieceVisual visual { get; private set; }
 
@@ -25,15 +21,31 @@ public class Piece : GameEntity, IAttackable
     {
         this.isBlack = isBlack;
         this.pieceGameObject = pieceGameObject;
-
         this.visual = pieceGameObject.GetComponent<PieceVisual>();
-
         currentHealth = maxHealth;
         isOnAttackCooldown = false;
-        currentAttackCooldownTimer = 0f;
-
         visual?.UpdateHealthVisual(currentHealth, maxHealth);
         visual?.UpdateCooldownVisual(isOnAttackCooldown);
+    }
+
+    public void StartAttackCooldown(MyCoroutineManager coroutineManager)
+    {
+        if (!isOnAttackCooldown && coroutineManager != null)
+        {
+            coroutineManager.StartPieceCooldown(this, attackCooldownDuration);
+        }
+    }
+
+    public void BeginAttackCooldown()
+    {
+        isOnAttackCooldown = true;
+        visual?.UpdateCooldownVisual(true);
+    }
+
+    public void EndAttackCooldown()
+    {
+        isOnAttackCooldown = false;
+        visual?.UpdateCooldownVisual(false);
     }
 
     public void UpdatePosition(Vector2Int newLogicalPosition, Board boardReference)
@@ -68,30 +80,6 @@ public class Piece : GameEntity, IAttackable
         if (currentHealth > maxHealth) currentHealth = maxHealth;
 
         visual?.UpdateHealthVisual(currentHealth, maxHealth);
-    }
-
-    public void StartAttackCooldown()
-    {
-        if (!isOnAttackCooldown)
-        {
-            isOnAttackCooldown = true;
-            currentAttackCooldownTimer = attackCooldownDuration;
-            visual?.UpdateCooldownVisual(true);
-        }
-    }
-
-    public void Cooldown(float deltaTime)
-    {
-        if (isOnAttackCooldown)
-        {
-            currentAttackCooldownTimer -= deltaTime;
-            if (currentAttackCooldownTimer <= 0)
-            {
-                isOnAttackCooldown = false;
-                currentAttackCooldownTimer = 0;
-                visual?.UpdateCooldownVisual(false);
-            }
-        }
     }
 
     private void HandleDestruction()

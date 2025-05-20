@@ -6,30 +6,25 @@ public class TurnManager : MonoBehaviour
 {
     [SerializeField] Color whitePlayerColor = Color.red;
     [SerializeField] Color blackPlayerColor = Color.blue;
-    [SerializeField] float turnTime = 15f;
+    [SerializeField] float turnTimeTotal = 15f;
     [SerializeField] UnityEngine.UI.Image timerBar;
     [SerializeField] bool startWithRandomPlayer = true;
     [SerializeField] GameManager gameManager;
-    
+
     private CursorVisual cursorVisual;
 
-    private float turnTimeTotal;
     private float timeLeftInTurn;
     private bool isBlacksTurnInternal;
 
     public bool isBlacksTurn => isBlacksTurnInternal;
 
-    void Awake()
-    {
-        turnTimeTotal = turnTime;
-        if (startWithRandomPlayer) isBlacksTurnInternal = Random.Range(0, 2) == 1;
-        else isBlacksTurnInternal = false;
-    }
-
     void Start()
     {
         GameObject cursorObject = GameObject.FindWithTag("Cursor");
         cursorVisual = cursorObject.GetComponentInChildren<CursorVisual>();
+
+        if (startWithRandomPlayer) isBlacksTurnInternal = Random.Range(0, 2) == 1;
+        else isBlacksTurnInternal = false;
 
         StartNewTurn();
     }
@@ -50,11 +45,13 @@ public class TurnManager : MonoBehaviour
 
     public void StartNewTurn()
     {
-        if(gameManager.IsGameOver()) return;
+        if (gameManager.IsGameOver()) return;
 
         timeLeftInTurn = turnTimeTotal;
         cursorVisual.UpdateMaterial(isBlacksTurnInternal);
         UpdateTimerBarColor();
+
+        GameEvents.TurnChanged.Invoke();
     }
 
     void UpdateTurnTimerVisuals()
@@ -64,11 +61,8 @@ public class TurnManager : MonoBehaviour
 
     void UpdateTimerBarColor()
     {
-        if (timerBar != null)
-        {
-            timerBar.color = isBlacksTurnInternal ? blackPlayerColor : whitePlayerColor;
-            timerBar.fillOrigin = isBlacksTurnInternal ? (int)UnityEngine.UI.Image.OriginHorizontal.Right : (int)UnityEngine.UI.Image.OriginHorizontal.Left;
-        }
+        timerBar.color = isBlacksTurnInternal ? blackPlayerColor : whitePlayerColor;
+        timerBar.fillOrigin = isBlacksTurnInternal ? (int)UnityEngine.UI.Image.OriginHorizontal.Right : (int)UnityEngine.UI.Image.OriginHorizontal.Left;
     }
 
     public void EndTurn()
@@ -80,7 +74,11 @@ public class TurnManager : MonoBehaviour
         isBlacksTurnInternal = !isBlacksTurnInternal;
         gameManager.CheckWinCondition();
 
-        if (!gameManager.IsGameOver())
+        if (gameManager.IsGameOver())
+        {
+            GameEvents.GameIsOver.Invoke();
+        }
+        else
         {
             StartNewTurn();
         }

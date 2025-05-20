@@ -1,14 +1,18 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MyCoroutineManager : MonoBehaviour
 {
-    [SerializeField] GameManager gameManager;
-
-
-    private void Start()
+    public void StartPieceCooldown(Piece piece, float duration)
     {
-        //StartCoroutine(gameManager.UpdatePieceCooldowns());
+        StartCoroutine(PieceCooldownCoroutine(piece, duration));
+    }
+
+    private IEnumerator PieceCooldownCoroutine(Piece piece, float duration)
+    {
+        piece.BeginAttackCooldown();
+        yield return new WaitForSeconds(duration);
+        piece.EndAttackCooldown();
     }
 }
+

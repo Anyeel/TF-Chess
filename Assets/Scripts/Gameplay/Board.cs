@@ -28,23 +28,28 @@ public class Board
         {
             return null;
         }
-        return squares[x, y];
+        return this[x, y];
     }
 
     public GameEntity GetEntityAtPosition(Vector2Int position)
     {
-        Square square = GetSquareAtPosition(position.x, position.y);
+        Square square = this[position.x, position.y];
         return square?.containedEntity;
     }
 
     public void SetEntityAtPosition(Vector2Int position, GameEntity entity)
     {
-        Square square = GetSquareAtPosition(position.x, position.y);
+        Square square = this[position.x, position.y];
         square.containedEntity = entity;
         if (entity != null)
         {
             entity.position = position;
         }
+    }
+
+    public bool IsOutOfBounds(Vector2Int position)
+    {
+        return position.x < 0 || position.x >= width || position.y < 0 || position.y >= height;
     }
 
     public Square this[int x, int y]
