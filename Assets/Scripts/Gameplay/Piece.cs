@@ -13,24 +13,26 @@ public class Piece : GameEntity, IAttackable
     public int currentHealth { get; private set; }
     public int maxHealth { get; private set; } = 3;
     public bool isOnAttackCooldown { get; private set; }
-    public float attackCooldownDuration { get; set; } = 2f;
+    public float attackCooldownDuration { get; set; } = 3f;
     public PieceVisual visual { get; private set; }
+    public Type pieceType { get; private set; }
 
-    public Piece(Vector2Int startPosition, bool isBlack, GameObject pieceGameObject)
+    public Piece(Vector2Int startPosition, Type pieceType, GameObject pieceGameObject)
         : base(pieceGameObject, startPosition)
     {
-        this.isBlack = isBlack;
+        this.pieceType = pieceType;
         this.pieceGameObject = pieceGameObject;
         this.visual = pieceGameObject.GetComponent<PieceVisual>();
         currentHealth = maxHealth;
         isOnAttackCooldown = false;
+        isBlack = pieceType == Type.BlackPiece;
         visual?.UpdateHealthVisual(currentHealth, maxHealth);
         visual?.UpdateCooldownVisual(isOnAttackCooldown);
     }
 
     public void StartAttackCooldown(MyCoroutineManager coroutineManager)
     {
-        if (!isOnAttackCooldown && coroutineManager != null)
+        if (!isOnAttackCooldown)
         {
             coroutineManager.StartPieceCooldown(this, attackCooldownDuration);
         }
@@ -51,14 +53,13 @@ public class Piece : GameEntity, IAttackable
     public void UpdatePosition(Vector2Int newLogicalPosition, Board boardReference)
     {
         position = newLogicalPosition;
-        if (pieceGameObject != null && boardReference != null)
+
+        Square targetSquare = boardReference.GetSquareAtPosition(newLogicalPosition.x, newLogicalPosition.y);
+        if (targetSquare != null && targetSquare.instance != null)
         {
-            Square targetSquare = boardReference.GetSquareAtPosition(newLogicalPosition.x, newLogicalPosition.y);
-            if (targetSquare != null && targetSquare.instance != null)
-            {
-                pieceGameObject.transform.position = targetSquare.instance.transform.position + new Vector3(0, 0, 0);
-            }
+            pieceGameObject.transform.position = targetSquare.instance.transform.position + new Vector3(0, 0, 0);
         }
+        
     }
 
     public void TakeDamage(int amount)

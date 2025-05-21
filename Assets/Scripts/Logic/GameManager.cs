@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Collections;
 
 public struct InputKeys
 {
@@ -39,6 +40,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] TurnManager turnManager;
     [SerializeField] MyCoroutineManager coroutineManager;
 
+    [SerializeField] GameObject cratePrefab;
+    [SerializeField] float spawnCrateSeconds = 20f;
+    [SerializeField] GameObject healthPickUp;
+
     private Board board;
     private CursorLogic cursorLogic;
     private CursorVisual cursorVisual;
@@ -70,6 +75,7 @@ public class GameManager : MonoBehaviour
         GameEvents.GameIsOver.AddListener(OnGameIsOver);
 
         InitializePieces();
+        StartCoroutine(SpawnRandomCrate());
     }
 
     void Update()
@@ -143,11 +149,11 @@ public class GameManager : MonoBehaviour
         }
 
         int idx = 0;
-        idx = CreateInitialPieces(whiteStartPositionsList.ToArray(), whitePiecePrefab, false, idx);
-        CreateInitialPieces(blackStartPositionsList.ToArray(), blackPiecePrefab, true, idx);
+        idx = CreateInitialPieces(whiteStartPositionsList.ToArray(), whitePiecePrefab, Type.WhitePiece, idx);
+        CreateInitialPieces(blackStartPositionsList.ToArray(), blackPiecePrefab, Type.BlackPiece, idx);
     }
 
-    int CreateInitialPieces(Vector2Int[] startPositions, GameObject piecePrefab, bool isBlack, int startIdx)
+    int CreateInitialPieces(Vector2Int[] startPositions, GameObject piecePrefab, Type pieceType, int startIdx)
     {
         for (int i = 0; i < startPositions.Length; i++)
         {
@@ -159,7 +165,8 @@ public class GameManager : MonoBehaviour
                 Vector3 visualPos = pieceSquare.instance.transform.position + new Vector3(0, 0, 0);
                 GameObject pieceObj = Instantiate(piecePrefab, visualPos, Quaternion.identity);
 
-                Piece piece = new Piece(pos, isBlack, pieceObj);
+                Piece piece = new Piece(pos, pieceType, pieceObj);
+
                 allPieces[startIdx + i] = piece;
                 board.SetEntityAtPosition(pos, piece);
             }
@@ -225,6 +232,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+
     public void CheckWinCondition()
     {
         if (gameOver) return;
@@ -248,10 +256,32 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
     void OnPieceDied()
     {
+        for (int i = 0; i < allPieces.Length; i++)
+        {
+            RemovePiece(allPieces[i]);
+        }
+
         CheckWinCondition();
+    }
+
+    void RemovePiece(Piece pieceToRemove)
+    {
+        Piece[] newPiecesArray = new Piece[allPieces.Length - 1];
+
+        int newIndex = 0;
+
+        for (int i = 0; i < allPieces.Length; i++)
+        {
+            if (allPieces[i] != pieceToRemove)
+            {
+                newPiecesArray[newIndex] = allPieces[i];
+                newIndex++;
+            }
+        }
+
+        allPieces = newPiecesArray;
     }
 
     void OnGameIsOver()
@@ -277,6 +307,45 @@ public class GameManager : MonoBehaviour
         else winner = "Jugador Blanco";
 
         Debug.Log($"¡JUEGO TERMINADO! El ganador es: {winner}");
+    }
+
+    IEnumerator SpawnRandomCrate()
+    {
+        List<Vector2Int> availablePositions = new List<Vector2Int>();
+
+        for (int x = 0; x < boardWidth; x++)
+        {
+            for (int y = 0; y < boardHeight; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+
+                if (board.GetEntityAtPosition(pos) == null)
+                {
+                    availablePositions.Add(pos);
+                }
+            }
+        }
+
+        if (availablePositions.Count > 0)
+        {
+            Vector2Int randomPos = availablePositions[Random.Range(0, availablePositions.Count)];
+
+            Square spawnSquare = board.GetSquareAtPosition(randomPos.x, randomPos.y);
+            if (spawnSquare != null && spawnSquare.instance != null)
+            {
+                Vector3 spawnPosition = spawnSquare.instance.transform.position;
+                GameObject crateObj = Instantiate(cratePrefab, spawnPosition, Quaternion.identity);
+
+                CrateLogic crate = new CrateLogic(randomPos, crateObj, Type.Crate, healthPickUp);
+                board.SetEntityAtPosition(randomPos, crate);
+            }
+        }
+        yield return new WaitForSeconds(spawnCrateSeconds);
+    }
+
+    public void SpawnHealthPickup(Vector3 position, GameObject healthPickupPrefab)
+    {
+        Instantiate(healthPickupPrefab, position, Quaternion.identity);
     }
 
 }

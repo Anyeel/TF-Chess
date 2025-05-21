@@ -99,8 +99,7 @@ public class CursorLogic
         {
             Vector2Int targetPos = originalPickUpPosition + dir;
 
-            if (targetPos.x >= 0 && targetPos.x < boardWidth &&
-                targetPos.y >= 0 && targetPos.y < boardHeight)
+            if (!boardReference.IsOutOfBounds(targetPos))
             {
                 GameEntity entityAtTarget = boardReference.GetEntityAtPosition(targetPos);
                 if (entityAtTarget == null)

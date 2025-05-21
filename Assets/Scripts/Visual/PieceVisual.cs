@@ -2,18 +2,30 @@ using UnityEngine;
 
 public class PieceVisual : MonoBehaviour
 {
-    [SerializeField] private Transform modelPartToScaleForHealth;
-    [SerializeField] private Material cooldownMaterial;
+    [SerializeField] Color cooldownColor;
+    [SerializeField] float cooldownTransitionTime = 3f;
 
     private Vector3 initialScale;
     private Material originalMaterial;
     private Renderer pieceRenderer;
+    private bool isInterpolating = false;
+    private float cooldownTimer;
+    private Color originalColor;
+
+    void Start()
+    {
+        originalColor = originalMaterial.color;
+    }
+
+    void Update()
+    {
+        InterpolateMaterial();
+    }
 
     void Awake()
     {
-        modelPartToScaleForHealth = transform;
         
-        initialScale = modelPartToScaleForHealth.localScale;
+        initialScale = transform.localScale;
 
         pieceRenderer = GetComponent<Renderer>();
 
@@ -24,22 +36,32 @@ public class PieceVisual : MonoBehaviour
 
     public void UpdateHealthVisual(int currentHealth, int maxHealth)
     {
-        if (modelPartToScaleForHealth == null) return;
-        if (maxHealth <= 0) return;
-
         float healthRatio = Mathf.Clamp01((float)currentHealth / maxHealth);
-        modelPartToScaleForHealth.localScale = new Vector3(initialScale.x, initialScale.y * healthRatio, initialScale.z);
+        transform.localScale = new Vector3(initialScale.x, initialScale.y * healthRatio, initialScale.z);
     }
 
     public void UpdateCooldownVisual(bool isOnCooldown)
     {
         if (isOnCooldown)
         {
-            pieceRenderer.material = cooldownMaterial;
+            isInterpolating = true;
+            cooldownTimer = 0f;
         }
-        else
+    }
+
+    void InterpolateMaterial() 
+    {
+        if (isInterpolating)
         {
-            pieceRenderer.material = originalMaterial;
+            cooldownTimer += Time.deltaTime;
+            float t = Mathf.Clamp01(cooldownTimer / cooldownTransitionTime);
+
+            pieceRenderer.material.color = Color.Lerp(cooldownColor, originalColor, t);
+
+            if (t >= 1f)
+            {
+                isInterpolating = false;
+            }
         }
     }
 }

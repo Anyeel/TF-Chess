@@ -72,7 +72,6 @@ public class TurnManager : MonoBehaviour
         gameManager.ForceDropSelectedPieceOnCurrentPlayer();
 
         isBlacksTurnInternal = !isBlacksTurnInternal;
-        gameManager.CheckWinCondition();
 
         if (gameManager.IsGameOver())
         {
