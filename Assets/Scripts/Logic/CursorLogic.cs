@@ -6,11 +6,13 @@ public class CursorLogic
     public Vector2Int currentPosition { get; private set; }
     private int boardWidth;
     private int boardHeight;
-    private Board boardReference; 
+    private Board boardReference;
     private Piece heldPiece;
 
     private Vector2Int originalPickUpPosition;
     private List<Vector2Int> allowedMoveSquares;
+    private const float pickUpOffset = 0.5f;
+
 
     public CursorLogic(int width, int height, Vector2Int startPosition, Board board)
     {
@@ -26,7 +28,7 @@ public class CursorLogic
     {
         Vector2Int newPotentialPosition = currentPosition + direction;
 
-        if (!IsHoldingPiece()) 
+        if (!IsHoldingPiece())
         {
             if (newPotentialPosition.x < 0) newPotentialPosition.x = boardWidth - 1;
             else if (newPotentialPosition.x >= boardWidth) newPotentialPosition.x = 0;
@@ -41,56 +43,85 @@ public class CursorLogic
             if (allowedMoveSquares.Contains(newPotentialPosition))
             {
                 GameEntity entityAtTarget = boardReference.GetEntityAtPosition(newPotentialPosition);
-                if (entityAtTarget == null || newPotentialPosition == originalPickUpPosition)
+                if (entityAtTarget == null || entityAtTarget is HealthPickUpLogic || newPotentialPosition == originalPickUpPosition)
                 {
                     currentPosition = newPotentialPosition;
+
+                    float currentHeight = heldPiece.pieceGameObject.transform.position.y;
+
                     heldPiece.UpdatePosition(currentPosition, boardReference);
+
+                    Vector3 pos = heldPiece.pieceGameObject.transform.position;
+                    heldPiece.pieceGameObject.transform.position = new Vector3(pos.x, currentHeight, pos.z);
                 }
             }
         }
     }
 
+
+
     public void HandlePieceInteraction(bool isCurrentPlayerBlack)
     {
-        if (heldPiece == null) 
+        if (heldPiece == null)
         {
             GameEntity entityOnSquare = boardReference.GetEntityAtPosition(currentPosition);
-            if (entityOnSquare is Piece pieceToPick) 
+            if (entityOnSquare is Piece pieceToPick)
             {
                 if (pieceToPick.isBlack == isCurrentPlayerBlack && pieceToPick.entityGameObject.activeInHierarchy)
                 {
                     heldPiece = pieceToPick;
-
-                    originalPickUpPosition = currentPosition; 
-
+                    originalPickUpPosition = currentPosition;
                     boardReference.SetEntityAtPosition(originalPickUpPosition, null);
+
+                    Vector3 currentPos = heldPiece.pieceGameObject.transform.position;
+                    heldPiece.pieceGameObject.transform.position = new Vector3(currentPos.x, currentPos.y + pickUpOffset, currentPos.z);
 
                     CalculateAllowedMoveSquares();
                 }
             }
         }
-        else 
+        else
         {
             GameEntity entityAtTarget = boardReference.GetEntityAtPosition(currentPosition);
-            if (entityAtTarget == null || currentPosition == originalPickUpPosition) 
-            {
-                boardReference.SetEntityAtPosition(currentPosition, heldPiece);
 
+            if (entityAtTarget is HealthPickUpLogic healthPickUp)
+            {
+                Vector3 currentPos = heldPiece.pieceGameObject.transform.position;
+                heldPiece.pieceGameObject.transform.position = new Vector3(currentPos.x, currentPos.y - pickUpOffset, currentPos.z);
+
+                healthPickUp.TryHealPiece(heldPiece);
+                boardReference.SetEntityAtPosition(currentPosition, null);
+                boardReference.SetEntityAtPosition(currentPosition, heldPiece);
                 if (heldPiece.position != currentPosition)
                 {
                     heldPiece.UpdatePosition(currentPosition, boardReference);
                 }
+                heldPiece = null;
+                allowedMoveSquares.Clear();
+                return;
+            }
 
+            if (entityAtTarget == null || currentPosition == originalPickUpPosition)
+            {
+                Vector3 currentPos = heldPiece.pieceGameObject.transform.position;
+                heldPiece.pieceGameObject.transform.position = new Vector3(currentPos.x, currentPos.y - pickUpOffset, currentPos.z);
+
+                boardReference.SetEntityAtPosition(currentPosition, heldPiece);
+                if (heldPiece.position != currentPosition)
+                {
+                    heldPiece.UpdatePosition(currentPosition, boardReference);
+                }
                 heldPiece = null;
                 allowedMoveSquares.Clear();
             }
         }
     }
 
+
     private void CalculateAllowedMoveSquares()
     {
         allowedMoveSquares.Clear();
-        if (heldPiece == null) return; 
+        if (heldPiece == null) return;
 
         allowedMoveSquares.Add(originalPickUpPosition);
 
@@ -102,7 +133,7 @@ public class CursorLogic
             if (!boardReference.IsOutOfBounds(targetPos))
             {
                 GameEntity entityAtTarget = boardReference.GetEntityAtPosition(targetPos);
-                if (entityAtTarget == null)
+                if (entityAtTarget == null || entityAtTarget is HealthPickUpLogic)
                 {
                     allowedMoveSquares.Add(targetPos);
                 }
@@ -114,8 +145,10 @@ public class CursorLogic
     {
         if (heldPiece != null)
         {
-            GameEntity entityAtTarget = boardReference.GetEntityAtPosition(currentPosition);
+            Vector3 currentPos = heldPiece.pieceGameObject.transform.position;
+            heldPiece.pieceGameObject.transform.position = new Vector3(currentPos.x, currentPos.y - pickUpOffset, currentPos.z);
 
+            GameEntity entityAtTarget = boardReference.GetEntityAtPosition(currentPosition);
             if (entityAtTarget == null || currentPosition == originalPickUpPosition)
             {
                 boardReference.SetEntityAtPosition(currentPosition, heldPiece);
@@ -124,11 +157,11 @@ public class CursorLogic
                     heldPiece.UpdatePosition(currentPosition, boardReference);
                 }
             }
-
             heldPiece = null;
             allowedMoveSquares.Clear();
         }
     }
+
 
     public bool IsHoldingPiece()
     {

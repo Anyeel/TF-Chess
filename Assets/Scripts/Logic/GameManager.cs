@@ -209,11 +209,16 @@ public class GameManager : MonoBehaviour
                             }
                         }
                     }
-                    attackingPiece.StartAttackCooldown(coroutineManager);
+
+                    int alivePieces = GetAlivePiecesCount(attackingPiece.isBlack);
+                    float cooldownDuration = Mathf.Max(1f, attackingPiece.attackCooldownDuration * (alivePieces / (float)pieceNum));
+
+                    attackingPiece.StartAttackCooldown(coroutineManager, cooldownDuration);
                 }
             }
         }
     }
+
 
     public void UpdatePieceCooldowns()
     {
@@ -226,12 +231,12 @@ public class GameManager : MonoBehaviour
                 {
                     board.SetEntityAtPosition(piece.position, null);
                 }
-                allPieces[i] = null;
+                RemovePiece(piece);
                 GameEvents.PieceDied.Invoke();
+                break; // Salir de un bucle para evitar que se siga iterando
             }
         }
     }
-
 
     public void CheckWinCondition()
     {
@@ -243,7 +248,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < allPieces.Length; i++)
         {
             Piece piece = allPieces[i];
-            if (piece.pieceGameObject.activeInHierarchy && piece.currentHealth > 0)
+            if (piece != null && piece.pieceGameObject.activeInHierarchy && piece.currentHealth > 0)
             {
                 if (piece.isBlack) blackCount++;
                 else whiteCount++;
@@ -258,10 +263,6 @@ public class GameManager : MonoBehaviour
 
     void OnPieceDied()
     {
-        for (int i = 0; i < allPieces.Length; i++)
-        {
-            RemovePiece(allPieces[i]);
-        }
 
         CheckWinCondition();
     }
@@ -311,41 +312,66 @@ public class GameManager : MonoBehaviour
 
     IEnumerator SpawnRandomCrate()
     {
-        List<Vector2Int> availablePositions = new List<Vector2Int>();
-
-        for (int x = 0; x < boardWidth; x++)
+        while (!gameOver)
         {
-            for (int y = 0; y < boardHeight; y++)
-            {
-                Vector2Int pos = new Vector2Int(x, y);
+            List<Vector2Int> availablePositions = new List<Vector2Int>();
 
-                if (board.GetEntityAtPosition(pos) == null)
+            for (int x = 0; x < boardWidth; x++)
+            {
+                for (int y = 0; y < boardHeight; y++)
                 {
-                    availablePositions.Add(pos);
+                    Vector2Int pos = new Vector2Int(x, y);
+
+                    if (board.GetEntityAtPosition(pos) == null)
+                    {
+                        availablePositions.Add(pos);
+                    }
                 }
             }
-        }
 
-        if (availablePositions.Count > 0)
-        {
-            Vector2Int randomPos = availablePositions[Random.Range(0, availablePositions.Count)];
-
-            Square spawnSquare = board.GetSquareAtPosition(randomPos.x, randomPos.y);
-            if (spawnSquare != null && spawnSquare.instance != null)
+            if (availablePositions.Count > 0)
             {
-                Vector3 spawnPosition = spawnSquare.instance.transform.position;
-                GameObject crateObj = Instantiate(cratePrefab, spawnPosition, Quaternion.identity);
+                Vector2Int randomPos = availablePositions[Random.Range(0, availablePositions.Count)];
 
-                CrateLogic crate = new CrateLogic(randomPos, crateObj, Type.Crate, healthPickUp);
-                board.SetEntityAtPosition(randomPos, crate);
+                Square spawnSquare = board.GetSquareAtPosition(randomPos.x, randomPos.y);
+                if (spawnSquare != null && spawnSquare.instance != null)
+                {
+                    Vector3 spawnPosition = spawnSquare.instance.transform.position;
+                    GameObject crateObj = Instantiate(cratePrefab, spawnPosition, Quaternion.identity);
+
+                    CrateLogic crate = new CrateLogic(randomPos, crateObj, Type.Crate, healthPickUp);
+                    board.SetEntityAtPosition(randomPos, crate);
+                }
             }
+            yield return new WaitForSeconds(spawnCrateSeconds);
         }
-        yield return new WaitForSeconds(spawnCrateSeconds);
     }
 
-    public void SpawnHealthPickup(Vector3 position, GameObject healthPickupPrefab)
+
+    public void SpawnHealthPickup(Vector3 position, GameObject healthPickupPrefab, Vector2Int logicalPosition)
     {
-        Instantiate(healthPickupPrefab, position, Quaternion.identity);
+        GameObject healthPickupObj = Instantiate(healthPickupPrefab, position, Quaternion.identity);
+        HealthPickUpLogic healthPickUpLogic = new HealthPickUpLogic(logicalPosition, healthPickupObj);
+        board.SetEntityAtPosition(logicalPosition, healthPickUpLogic);
+    }
+
+    public Board GetBoard()
+    {
+        return board;
+    }
+
+    public int GetAlivePiecesCount(bool isBlack)
+    {
+        int count = 0;
+        for (int i = 0; i < allPieces.Length; i++)
+        {
+            Piece piece = allPieces[i];
+            if (piece != null && piece.pieceGameObject.activeInHierarchy && piece.isBlack == isBlack)
+            {
+                count++;
+            }
+        }
+        return count;
     }
 
 }

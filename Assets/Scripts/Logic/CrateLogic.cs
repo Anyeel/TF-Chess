@@ -42,11 +42,18 @@ public class CrateLogic : GameEntity, IAttackable
     private void HandleDestruction()
     {
         GameManager gameManager = GameObject.FindObjectOfType<GameManager>();
-
-        gameManager.SpawnHealthPickup(crateGameObject.transform.position, healthPickUp);
+        Vector2Int logicalPosition = this.position;
+        gameManager.SpawnHealthPickup(crateGameObject.transform.position, healthPickUp, logicalPosition);
 
         crateGameObject.SetActive(false);
+
+        Board board = gameManager.GetBoard();
+        if (board.GetEntityAtPosition(logicalPosition) == this)
+        {
+            board.SetEntityAtPosition(logicalPosition, null);
+        }
     }
+
 
 }
 

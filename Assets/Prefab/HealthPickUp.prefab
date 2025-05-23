@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4845661294483329556}
+  - component: {fileID: 5449583036614402912}
   m_Layer: 0
   m_Name: HealthPickUp
   m_TagString: Untagged
@@ -32,6 +33,19 @@ Transform:
   - {fileID: 1208432096943654546}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5449583036614402912
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3594939589226293044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 334b25b0f800b864d8d9cf5ec4a32d02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rotationSpeed: 90
 --- !u!1 &7281178034610402796
 GameObject:
   m_ObjectHideFlags: 0

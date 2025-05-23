@@ -13,7 +13,7 @@ public class Piece : GameEntity, IAttackable
     public int currentHealth { get; private set; }
     public int maxHealth { get; private set; } = 3;
     public bool isOnAttackCooldown { get; private set; }
-    public float attackCooldownDuration { get; set; } = 3f;
+    public float attackCooldownDuration { get; set; } = 4f;
     public PieceVisual visual { get; private set; }
     public Type pieceType { get; private set; }
 
@@ -78,13 +78,20 @@ public class Piece : GameEntity, IAttackable
     public void Heal(int amount)
     {
         currentHealth += amount;
-        if (currentHealth > maxHealth) currentHealth = maxHealth;
-
-        visual?.UpdateHealthVisual(currentHealth, maxHealth);
+        visual.UpdateHealthVisual(currentHealth, currentHealth);
     }
 
     private void HandleDestruction()
     {
         pieceGameObject.SetActive(false);
     }
+
+    public void StartAttackCooldown(MyCoroutineManager coroutineManager, float customDuration)
+    {
+        if (!isOnAttackCooldown)
+        {
+            coroutineManager.StartPieceCooldown(this, customDuration);
+        }
+    }
+
 }

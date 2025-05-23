@@ -485,7 +485,7 @@ MonoBehaviour:
   turnManager: {fileID: 831260672}
   coroutineManager: {fileID: 831260673}
   cratePrefab: {fileID: 4254451883704099440, guid: 3b6ada3ef20d52847b56922d8ec0676e, type: 3}
-  spawnCrateSeconds: 20
+  spawnCrateSeconds: 15
   healthPickUp: {fileID: 3594939589226293044, guid: 5fd83e04286ad29448f312fbd1db7cfb, type: 3}
 --- !u!114 &831260672
 MonoBehaviour:
@@ -501,7 +501,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   whitePlayerColor: {r: 1, g: 1, b: 1, a: 1}
   blackPlayerColor: {r: 0, g: 0, b: 0, a: 1}
-  turnTimeTotal: 20
+  turnTimeTotal: 10
   timerBar: {fileID: 799641618}
   startWithRandomPlayer: 1
   gameManager: {fileID: 831260671}

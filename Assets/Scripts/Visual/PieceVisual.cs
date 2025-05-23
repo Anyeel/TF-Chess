@@ -34,10 +34,11 @@ public class PieceVisual : MonoBehaviour
         originalMaterial = pieceRenderer.material;    
     }
 
-    public void UpdateHealthVisual(int currentHealth, int maxHealth)
+    public void UpdateHealthVisual(int currentHealth, int _)
     {
-        float healthRatio = Mathf.Clamp01((float)currentHealth / maxHealth);
-        transform.localScale = new Vector3(initialScale.x, initialScale.y * healthRatio, initialScale.z);
+        float baseHeight = initialScale.y;
+        float newHeight = baseHeight + (currentHealth - 3) * 0.5f;
+        transform.localScale = new Vector3(initialScale.x, Mathf.Max(newHeight, 0.1f), initialScale.z);
     }
 
     public void UpdateCooldownVisual(bool isOnCooldown)
